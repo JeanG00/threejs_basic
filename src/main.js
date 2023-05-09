@@ -4,7 +4,7 @@ import { MTLLoader } from "three/addons/loaders/MTLLoader.js";
 import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import "./main.less";
 
-var scene, camera, renderer, mesh;
+var scene, camera, renderer, mesh, clock;
 var meshFloor, ambientLight, light;
 var crate, crateTexture, crateNormalMap, crateBumpMap;
 
@@ -48,6 +48,12 @@ var models = {
     obj: "/models/Pirateship.obj",
     mesh: null,
   },
+  uziGold: {
+    mtl: "/models/uziGold.mtl",
+    obj: "/models/uziGold.obj",
+    mesh: null,
+    castShadow: false,
+  },
 };
 
 var meshes = {};
@@ -63,6 +69,7 @@ function init() {
   );
   camera.position.set(0, player.height, -5);
   camera.lookAt(0, player.height, 0);
+  clock = new THREE.Clock();
 
   loadingScreen.box.position.set(0, 0, 5);
   loadingScreen.camera.lookAt(loadingScreen.box.position);
@@ -127,6 +134,11 @@ function init() {
   crate.castShadow = true;
   scene.add(crate);
 
+  // REMEMBER: Loading in Javascript is asynchronous, so you need
+  // to wrap the code in a function and pass it the index. If you
+  // don't, then the index '_key' can change while the model is being
+  // downloaded, and so the wrong model will be matched with the wrong
+  // index key.
   for (let _key in models) {
     (function (key) {
       const mtlLoader = new MTLLoader(loadingManager);
@@ -137,8 +149,15 @@ function init() {
         objLoader.load(models[key].obj, function (mesh) {
           mesh.traverse(function (node) {
             if (node instanceof THREE.Mesh) {
-              node.castShadow = true;
-              node.receiveShadow = true;
+              if ("castShadow" in models[key]) {
+                node.castShadow = models[key].castShadow;
+              } else {
+                node.castShadow = true;
+              }
+
+              if ("receiveShadow" in models[key])
+                node.receiveShadow = models[key].receiveShadow;
+              else node.receiveShadow = true;
             }
           });
           models[key].mesh = mesh;
@@ -182,7 +201,8 @@ function onResourcesLoaded() {
   meshes["tent2"] = models.tent.mesh.clone();
   meshes["campfire1"] = models.campfire.mesh.clone();
   meshes["campfire2"] = models.campfire.mesh.clone();
-  meshes["pirateship"] = models.pirateship.mesh.clone();
+  meshes["pirateship1"] = models.pirateship.mesh.clone();
+  meshes["playerweapon"] = models.uziGold.mesh.clone();
 
   meshes["tent1"].position.set(-5, 0, 4);
   // meshes["tent1"].rotation.y = -Math.PI / 4;
@@ -195,9 +215,13 @@ function onResourcesLoaded() {
   scene.add(meshes["campfire1"]);
   scene.add(meshes["campfire2"]);
 
-  meshes["pirateship"].position.set(-11, -1, 1);
-  meshes["pirateship"].rotation.set(0, Math.PI, 0);
-  scene.add(meshes["pirateship"]);
+  meshes["pirateship1"].position.set(-11, -1, 1);
+  meshes["pirateship1"].rotation.set(0, Math.PI, 0);
+  scene.add(meshes["pirateship1"]);
+
+  meshes["playerweapon"].position.set(0, 2, 0);
+  meshes["playerweapon"].scale.set(10, 10, 10);
+  scene.add(meshes["playerweapon"]);
 }
 
 function animate() {
@@ -209,6 +233,8 @@ function animate() {
     if (renderer) renderer.render(loadingScreen.scene, loadingScreen.camera);
     return;
   }
+  const time = Date.now() * 0.0005;
+  const delta = clock.getDelta();
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
   if (mesh) {
@@ -248,7 +274,20 @@ function animate() {
     }
   }
   if (crate) crate.rotation.y += 0.01;
-  if (meshes['pirateship']) meshes['pirateship'].rotation.z += 0.01;
+  // if (meshes['pirateship']) meshes['pirateship'].rotation.z += 0.01;
+  if (meshes["playerweapon"])
+    meshes["playerweapon"].position.set(
+      camera.position.x - Math.sin(camera.rotation.y + Math.PI / 6) * 0.75,
+      camera.position.y -
+        0.5 +
+        Math.sin(time * 4 + camera.position.x + camera.position.z) * 0.01,
+      camera.position.z + Math.cos(camera.rotation.y + Math.PI / 6) * 0.75
+    );
+  meshes["playerweapon"].rotation.set(
+    camera.rotation.x,
+    camera.rotation.y - Math.PI,
+    camera.rotation.z
+  );
   if (renderer) renderer.render(scene, camera);
 }
 
