@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import WebGL from "three/addons/capabilities/WebGL.js";
+import { MTLLoader } from "three/addons/loaders/MTLLoader.js";
+import { OBJLoader } from "three/addons/loaders/OBJLoader.js";
 import "./main.less";
 
 var scene, camera, renderer, mesh;
@@ -72,6 +74,24 @@ function init() {
   crate.castShadow = true;
   scene.add(crate);
 
+  const mtlLoader = new MTLLoader();
+  mtlLoader.load("/models/Tent_Poles_01.mtl", function (materials) {
+    materials.preload();
+    const objLoader = new OBJLoader();
+    objLoader.setMaterials(materials);
+    objLoader.load("/models/Tent_Poles_01.obj", function (mesh) {
+      mesh.traverse(function (node) {
+        if (node instanceof THREE.Mesh) {
+          node.castShadow = true;
+          node.receiveShadow = true;
+        }
+      });
+      mesh.position.set(-5, 0, 4);
+      mesh.rotation.y = -Math.PI / 4;
+      scene.add(mesh);
+    });
+  });
+
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
@@ -109,26 +129,26 @@ function animate() {
     if (keyboard[87]) {
       // w
       camera.position.x -= Math.sin(camera.rotation.y) * player.speed;
-      camera.position.z -= Math.cos(camera.rotation.y) * player.speed;
+      camera.position.z -= -Math.cos(camera.rotation.y) * player.speed;
     }
     if (keyboard[83]) {
       // s
       camera.position.x += Math.sin(camera.rotation.y) * player.speed;
-      camera.position.z += Math.cos(camera.rotation.y) * player.speed;
+      camera.position.z += -Math.cos(camera.rotation.y) * player.speed;
     }
     if (keyboard[65]) {
       //  a
       camera.position.x +=
         Math.sin(camera.rotation.y + Math.PI / 2) * player.speed;
       camera.position.z +=
-        Math.cos(camera.rotation.y + Math.PI / 2) * player.speed;
+        -Math.cos(camera.rotation.y + Math.PI / 2) * player.speed;
     }
     if (keyboard[68]) {
       //  d
       camera.position.x +=
         Math.sin(camera.rotation.y - Math.PI / 2) * player.speed;
       camera.position.z +=
-        Math.cos(camera.rotation.y - Math.PI / 2) * player.speed;
+        -Math.cos(camera.rotation.y - Math.PI / 2) * player.speed;
     }
     if (keyboard[37]) {
       // left arrow
