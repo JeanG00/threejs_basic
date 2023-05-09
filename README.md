@@ -1,5 +1,11 @@
 # Three.js practice
 
+## [Video tutorial by xSaucecode](https://www.youtube.com/playlist?list=PLCTVwBLCNozSGfxhCIiEH26tbJrQ2_Bw3)
+
+## [Textures & More](https://opengameart.org/)
+
+## [Textures & More](https://www.kenney.nl/assets)
+
 ## script
 
 ```json
