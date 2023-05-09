@@ -16,6 +16,22 @@ var player = {
 };
 var useWireFrame = false;
 
+var loadingScreen = {
+  scene: new THREE.Scene(),
+  camera: new THREE.PerspectiveCamera(
+    90,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    100
+  ),
+  box: new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.5, 0.5),
+    new THREE.MeshBasicMaterial({ color: 0x4444ff })
+  ),
+};
+var loadingManager = null;
+var RESOURCES_LOADED = false;
+
 function init() {
   scene = new THREE.Scene();
   //  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -27,6 +43,23 @@ function init() {
   );
   camera.position.set(0, player.height, -5);
   camera.lookAt(0, player.height, 0);
+
+  loadingScreen.box.position.set(0, 0, 5);
+  loadingScreen.camera.lookAt(loadingScreen.box.position);
+  loadingScreen.scene.add(loadingScreen.box);
+
+  // Create a loading manager to set RESOURCES_LOADED when appropriate.
+  // Pass loadingManager to all resource loaders.
+  loadingManager = new THREE.LoadingManager();
+
+  loadingManager.onProgress = function (item, loaded, total) {
+    console.log(item, loaded, total);
+  };
+
+  loadingManager.onLoad = function () {
+    console.log("loaded all resources");
+    RESOURCES_LOADED = true;
+  };
 
   mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
@@ -55,7 +88,7 @@ function init() {
   light.shadow.camera.far = 25;
   scene.add(light);
 
-  const textureLoader = new THREE.TextureLoader();
+  const textureLoader = new THREE.TextureLoader(loadingManager);
   crateTexture = textureLoader.load("/3crates/crate0/crate0_diffuse.png");
   crateBumpMap = textureLoader.load("/3crates/crate0/crate0_bump.png");
   crateNormalMap = textureLoader.load("/3crates/crate0/crate0_normal.png");
@@ -74,10 +107,10 @@ function init() {
   crate.castShadow = true;
   scene.add(crate);
 
-  const mtlLoader = new MTLLoader();
+  const mtlLoader = new MTLLoader(loadingManager);
   mtlLoader.load("/models/Tent_Poles_01.mtl", function (materials) {
     materials.preload();
-    const objLoader = new OBJLoader();
+    const objLoader = new OBJLoader(loadingManager);
     objLoader.setMaterials(materials);
     objLoader.load("/models/Tent_Poles_01.obj", function (mesh) {
       mesh.traverse(function (node) {
@@ -121,6 +154,13 @@ function init() {
 
 function animate() {
   requestAnimationFrame(animate);
+  if (!RESOURCES_LOADED) {
+    loadingScreen.box.position.x -= 0.05;
+    if (loadingScreen.box.position.x < -10) loadingScreen.box.position.x = 10;
+    loadingScreen.box.position.y = Math.sin(loadingScreen.box.position.x);
+    if (renderer) renderer.render(loadingScreen.scene, loadingScreen.camera);
+    return;
+  }
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
   if (mesh) {
