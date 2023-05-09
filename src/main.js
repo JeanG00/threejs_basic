@@ -4,12 +4,13 @@ import "./main.less";
 
 var scene, camera, renderer, mesh;
 var meshFloor, ambientLight, light;
+var crate, crateTexture, crateNormalMap, crateBumpMap;
 
 var keyboard = {};
 var player = {
   height: 1.0,
   speed: 0.2,
-  turnSpeed: Math.PI * 0.01,
+  turnSpeed: Math.PI * 0.02,
 };
 var useWireFrame = false;
 
@@ -24,20 +25,22 @@ function init() {
   );
   camera.position.set(0, player.height, -5);
   camera.lookAt(0, player.height, 0);
+
   mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshPhongMaterial({ color: 0xff9999, wireframe: useWireFrame })
+    new THREE.MeshPhongMaterial({ color: 0xff4444, wireframe: useWireFrame })
   );
   mesh.position.y += 1;
   mesh.receiveShadow = true;
   mesh.castShadow = true;
   scene.add(mesh);
+
   meshFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(10, 10, 10, 10),
+    new THREE.PlaneGeometry(20, 20, 10, 10),
     new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: useWireFrame })
   );
   meshFloor.rotation.x -= Math.PI / 2;
-  meshFloor.receiveShadow= true;
+  meshFloor.receiveShadow = true;
   scene.add(meshFloor);
 
   ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
@@ -49,6 +52,25 @@ function init() {
   light.shadow.camera.near = 0.1;
   light.shadow.camera.far = 25;
   scene.add(light);
+
+  const textureLoader = new THREE.TextureLoader();
+  crateTexture = textureLoader.load("/3crates/crate0/crate0_diffuse.png");
+  crateBumpMap = textureLoader.load("/3crates/crate0/crate0_bump.png");
+  crateNormalMap = textureLoader.load("/3crates/crate0/crate0_normal.png");
+
+  crate = new THREE.Mesh(
+    new THREE.BoxGeometry(3, 3, 3),
+    new THREE.MeshPhongMaterial({
+      color: 0xffffff,
+      map: crateTexture,
+      bumpMap: crateBumpMap,
+      normalMap: crateNormalMap,
+    })
+  );
+  crate.position.set(2.5, 3 / 2, 2.5);
+  crate.receiveShadow = true;
+  crate.castShadow = true;
+  scene.add(crate);
 
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -117,6 +139,7 @@ function animate() {
       camera.rotation.y += player.turnSpeed;
     }
   }
+  if (crate) crate.rotation.y += 0.01;
   if (renderer) renderer.render(scene, camera);
 }
 
