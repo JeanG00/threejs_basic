@@ -3,14 +3,15 @@ import WebGL from "three/addons/capabilities/WebGL.js";
 import "./main.less";
 
 var scene, camera, renderer, mesh;
-var meshFloor;
+var meshFloor, ambientLight, light;
 
 var keyboard = {};
 var player = {
   height: 1.0,
   speed: 0.2,
-  turnSpeed: Math.PI * 0.01
+  turnSpeed: Math.PI * 0.01,
 };
+var useWireFrame = false;
 
 function init() {
   scene = new THREE.Scene();
@@ -25,19 +26,34 @@ function init() {
   camera.lookAt(0, player.height, 0);
   mesh = new THREE.Mesh(
     new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff9999, wireframe: true })
+    new THREE.MeshPhongMaterial({ color: 0xff9999, wireframe: useWireFrame })
   );
   mesh.position.y += 1;
+  mesh.receiveShadow = true;
+  mesh.castShadow = true;
   scene.add(mesh);
   meshFloor = new THREE.Mesh(
     new THREE.PlaneGeometry(10, 10, 10, 10),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
+    new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: useWireFrame })
   );
   meshFloor.rotation.x -= Math.PI / 2;
+  meshFloor.receiveShadow= true;
   scene.add(meshFloor);
+
+  ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+  scene.add(ambientLight);
+
+  light = new THREE.PointLight(0xffffff, 0.8, 18);
+  light.position.set(-3, 6, -3);
+  light.castShadow = true;
+  light.shadow.camera.near = 0.1;
+  light.shadow.camera.far = 25;
+  scene.add(light);
 
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.BasicShadowMap;
   // renderer.setSize(window.innerWidth/2, window.innerHeight/2, false)
   // will render your app at half resolution
   document.body.appendChild(renderer.domElement);
