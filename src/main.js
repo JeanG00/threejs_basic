@@ -32,6 +32,26 @@ var loadingScreen = {
 var loadingManager = null;
 var RESOURCES_LOADED = false;
 
+var models = {
+  tent: {
+    mtl: "/models/Tent_Poles_01.mtl",
+    obj: "/models/Tent_Poles_01.obj",
+    mesh: null,
+  },
+  campfire: {
+    mtl: "/models/Campfire_01.mtl",
+    obj: "/models/Campfire_01.obj",
+    mesh: null,
+  },
+  pirateship: {
+    mtl: "/models/Pirateship.mtl",
+    obj: "/models/Pirateship.obj",
+    mesh: null,
+  },
+};
+
+var meshes = {};
+
 function init() {
   scene = new THREE.Scene();
   //  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -57,8 +77,8 @@ function init() {
   };
 
   loadingManager.onLoad = function () {
-    console.log("loaded all resources");
     RESOURCES_LOADED = true;
+    onResourcesLoaded();
   };
 
   mesh = new THREE.Mesh(
@@ -107,23 +127,28 @@ function init() {
   crate.castShadow = true;
   scene.add(crate);
 
-  const mtlLoader = new MTLLoader(loadingManager);
-  mtlLoader.load("/models/Tent_Poles_01.mtl", function (materials) {
-    materials.preload();
-    const objLoader = new OBJLoader(loadingManager);
-    objLoader.setMaterials(materials);
-    objLoader.load("/models/Tent_Poles_01.obj", function (mesh) {
-      mesh.traverse(function (node) {
-        if (node instanceof THREE.Mesh) {
-          node.castShadow = true;
-          node.receiveShadow = true;
-        }
+  for (let _key in models) {
+    (function (key) {
+      const mtlLoader = new MTLLoader(loadingManager);
+      mtlLoader.load(models[key].mtl, function (materials) {
+        materials.preload();
+        const objLoader = new OBJLoader(loadingManager);
+        objLoader.setMaterials(materials);
+        objLoader.load(models[key].obj, function (mesh) {
+          mesh.traverse(function (node) {
+            if (node instanceof THREE.Mesh) {
+              node.castShadow = true;
+              node.receiveShadow = true;
+            }
+          });
+          models[key].mesh = mesh;
+          // mesh.position.set(-5, 0, 4);
+          // mesh.rotation.y = -Math.PI / 4;
+          // scene.add(mesh);
+        });
       });
-      mesh.position.set(-5, 0, 4);
-      mesh.rotation.y = -Math.PI / 4;
-      scene.add(mesh);
-    });
-  });
+    })(_key);
+  }
 
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -150,6 +175,29 @@ function init() {
 
   // camera.position.z = 5;
   animate();
+}
+
+function onResourcesLoaded() {
+  meshes["tent1"] = models.tent.mesh.clone();
+  meshes["tent2"] = models.tent.mesh.clone();
+  meshes["campfire1"] = models.campfire.mesh.clone();
+  meshes["campfire2"] = models.campfire.mesh.clone();
+  meshes["pirateship"] = models.pirateship.mesh.clone();
+
+  meshes["tent1"].position.set(-5, 0, 4);
+  // meshes["tent1"].rotation.y = -Math.PI / 4;
+  meshes["tent2"].position.set(-8, 0, 4);
+  scene.add(meshes["tent1"]);
+  scene.add(meshes["tent2"]);
+
+  meshes["campfire1"].position.set(-5, 0, 1);
+  meshes["campfire2"].position.set(-8, 0, 1);
+  scene.add(meshes["campfire1"]);
+  scene.add(meshes["campfire2"]);
+
+  meshes["pirateship"].position.set(-11, -1, 1);
+  meshes["pirateship"].rotation.set(0, Math.PI, 0);
+  scene.add(meshes["pirateship"]);
 }
 
 function animate() {
@@ -200,6 +248,7 @@ function animate() {
     }
   }
   if (crate) crate.rotation.y += 0.01;
+  if (meshes['pirateship']) meshes['pirateship'].rotation.z += 0.01;
   if (renderer) renderer.render(scene, camera);
 }
 
