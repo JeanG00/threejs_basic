@@ -13,6 +13,7 @@ var player = {
   height: 1.0,
   speed: 0.2,
   turnSpeed: Math.PI * 0.02,
+  canShoot: 0,
 };
 var useWireFrame = false;
 
@@ -58,6 +59,8 @@ var models = {
 
 var meshes = {};
 
+var bullets = [];
+
 function init() {
   scene = new THREE.Scene();
   //  camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -98,8 +101,8 @@ function init() {
   scene.add(mesh);
 
   meshFloor = new THREE.Mesh(
-    new THREE.PlaneGeometry(20, 20, 10, 10),
-    new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: useWireFrame })
+    new THREE.PlaneGeometry(20, 20, 50, 50),
+    new THREE.MeshPhongMaterial({ color: 0xffffff, wireframe: true })
   );
   meshFloor.rotation.x -= Math.PI / 2;
   meshFloor.receiveShadow = true;
@@ -237,6 +240,15 @@ function animate() {
   const delta = clock.getDelta();
   // cube.rotation.x += 0.01;
   // cube.rotation.y += 0.01;
+
+  for (let index = 0; index < bullets.length; index++) {
+    if (!bullets[index]) continue;
+    if (!bullets[index].alive) {
+      bullets.splice(index, 1);
+      continue;
+    }
+    bullets[index].position.add(bullets[index].velocity);
+  }
   if (mesh) {
     mesh.rotation.x += 0.01;
     mesh.rotation.y += 0.02;
@@ -272,6 +284,32 @@ function animate() {
       // right arrow
       camera.rotation.y += player.turnSpeed;
     }
+
+    if (keyboard[32] && player.canShoot <= 0) {
+      const bullet = new THREE.Mesh(
+        new THREE.SphereGeometry(0.05, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      bullet.position.set(
+        meshes["playerweapon"].position.x,
+        meshes["playerweapon"].position.y + 0.15,
+        meshes["playerweapon"].position.z
+      );
+      bullet.velocity = new THREE.Vector3(
+        -Math.sin(camera.rotation.y),
+        0,
+        Math.cos(camera.rotation.y)
+      );
+      bullet.alive = true;
+      setTimeout(() => {
+        bullet.alive = false;
+        scene.remove(bullet);
+      }, 1000);
+      bullets.push(bullet);
+      scene.add(bullet);
+      player.canShoot = 10;
+    }
+    if (player.canShoot > 0) player.canShoot -= 1;
   }
   if (crate) crate.rotation.y += 0.01;
   // if (meshes['pirateship']) meshes['pirateship'].rotation.z += 0.01;
